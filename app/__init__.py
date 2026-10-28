@@ -1,0 +1,1 @@
+"""JewelryTryOn application package."""

@@ -1,0 +1,12 @@
+.env
+.venv/
+__pycache__/
+*.py[cod]
+.DS_Store
+output.png
+storage/uploads/*
+storage/results/*
+storage/models/*
+!storage/uploads/.gitkeep
+!storage/results/.gitkeep
+!storage/models/.gitkeep
