@@ -7,7 +7,8 @@ from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
-DATABASE_URL = f"sqlite:///{ROOT_DIR / 'jewelrytryon.db'}"
+DATABASE_PATH = ROOT_DIR / "jewelrytryon.db"
+DATABASE_URL = f"sqlite:///{DATABASE_PATH}"
 
 engine = create_engine(
     DATABASE_URL,
@@ -23,6 +24,7 @@ class Base(DeclarativeBase):
 def init_db() -> None:
     from app.models import Generation, Upload
 
+    DATABASE_PATH.parent.mkdir(parents=True, exist_ok=True)
     Base.metadata.create_all(bind=engine)
 
 

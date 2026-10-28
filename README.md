@@ -1,8 +1,8 @@
 # JewelryTryOn
 
 JewelryTryOn is an MVP for previewing jewelry on pre-made AI model photos. The
-standalone generation script is available first; the FastAPI backend and web
-interface will be added in the next steps.
+It includes a FastAPI backend and a simple Tailwind/vanilla JavaScript web
+interface, plus a standalone generation script for testing image results.
 
 ## Step 1: Run the standalone image generation
 
@@ -37,10 +37,9 @@ interface will be added in the next steps.
    The script calls `gpt-image-1` with `quality="low"` and saves the result as
    `output.png` in the project root.
 
-## Running the web app
+## Run the web app
 
-The FastAPI application and frontend will be implemented in the next steps.
-Once they are present, start the app with:
+Start the FastAPI application with:
 
 ```bash
 uvicorn app.main:app --reload
@@ -51,7 +50,14 @@ uvicorn app.main:app --reload
 ```text
 .
 ├── app/
-│   └── __init__.py
+│   ├── static/
+│   │   └── index.html
+│   ├── ai.py
+│   ├── db.py
+│   ├── image_utils.py
+│   ├── main.py
+│   ├── models.py
+│   └── routes.py
 ├── storage/
 │   ├── models/
 │   ├── results/
@@ -60,6 +66,7 @@ uvicorn app.main:app --reload
 ├── models.json
 ├── requirements.txt
 └── test_generate.py
+└── jewelrytryon.db  # created on first app start
 ```
 
 ## Planned scope

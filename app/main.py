@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import APIRouter, FastAPI
-from fastapi.responses import HTMLResponse
+from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.db import init_db
@@ -35,9 +35,6 @@ api.add_api_route("/jobs/{job_id}", get_job, methods=["GET"])
 app.include_router(api)
 
 
-@app.get("/", response_class=HTMLResponse)
-def home() -> str:
-    return (
-        "<h1>JewelryTryOn</h1>"
-        "<p>Backend is ready. The web interface will be added in Step 3.</p>"
-    )
+@app.get("/")
+def home() -> FileResponse:
+    return FileResponse(ROOT_DIR / "app" / "static" / "index.html")

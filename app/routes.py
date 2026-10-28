@@ -8,6 +8,7 @@ from pathlib import Path
 
 from fastapi import BackgroundTasks, Depends, File, Form, HTTPException, UploadFile
 from pydantic import BaseModel, Field
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from app.ai import MODEL_DIR, MODELS_FILE, run_generation
@@ -54,15 +55,27 @@ async def upload_jewelry(
     except OSError as exc:
         raise HTTPException(status_code=500, detail="Could not save uploaded image.") from exc
 
-    db.add(
-        Upload(
-            id=upload_id,
-            original_path=str(original_path),
-            cutout_path=str(cutout_path),
-            jewelry_type=jewelry_type,
+    try:
+        db.add(
+            Upload(
+                id=upload_id,
+                original_path=str(original_path),
+                cutout_path=str(cutout_path),
+                jewelry_type=jewelry_type,
+            )
         )
-    )
-    db.commit()
+        db.commit()
+    except SQLAlchemyError as exc:
+        db.rollback()
+        original_path.unlink(missing_ok=True)
+        cutout_path.unlink(missing_ok=True)
+        raise HTTPException(
+            status_code=500,
+            detail=(
+                "Upload files were saved, but the database could not be written. "
+                "Check that the project directory is writable and restart the server."
+            ),
+        ) from exc
     return {"upload_id": upload_id}
 
 

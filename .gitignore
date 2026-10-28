@@ -1,5 +1,6 @@
 .env
 .venv/
+jewelrytryon.db
 __pycache__/
 *.py[cod]
 .DS_Store
@@ -10,3 +11,4 @@ storage/models/*
 !storage/uploads/.gitkeep
 !storage/results/.gitkeep
 !storage/models/.gitkeep
+!storage/models/*.png
