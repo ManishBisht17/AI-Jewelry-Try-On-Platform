@@ -34,8 +34,22 @@ interface, plus a standalone generation script for testing image results.
    python test_generate.py path/to/model.png path/to/jewelry.png
    ```
 
-   The script calls `gpt-image-1` with `quality="low"` and saves the result as
+   The script calls `gpt-image-2.5-sunburst` with `quality="low"` and saves the result as
    `output.png` in the project root.
+
+## Set up the database
+
+SQLite is used by default (`jewelrytryon.db`). Create/verify tables with:
+
+```bash
+python scripts/setup_db.py
+```
+
+The app also runs `init_db()` automatically on startup. Optional `.env` setting:
+
+```bash
+DATABASE_URL=sqlite:///jewelrytryon.db
+```
 
 ## Run the web app
 

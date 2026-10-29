@@ -5,6 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>JewelryTryOn</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      @keyframes tryon-spin {
+        to { transform: rotate(360deg); }
+      }
+      .tryon-spinner {
+        width: 2.5rem;
+        height: 2.5rem;
+        border-radius: 9999px;
+        border: 3px solid rgb(68 64 60);
+        border-top-color: rgb(252 211 77);
+        animation: tryon-spin 0.8s linear infinite;
+      }
+    </style>
   </head>
   <body class="min-h-screen bg-stone-950 text-stone-100">
     <main class="mx-auto max-w-6xl px-6 py-10">
@@ -44,8 +57,18 @@
 
             <div>
               <div class="flex items-center justify-between">
-                <span class="text-sm font-medium text-stone-300">Choose a model</span>
+                <span class="text-sm font-medium text-stone-300">Wear-on photo</span>
                 <span id="model-status" class="text-xs text-stone-500"></span>
+              </div>
+              <p class="mt-1 text-xs text-stone-500">
+                This is the model photo your jewelry will be placed on.
+              </p>
+              <div id="selected-model-preview" class="mt-3 overflow-hidden rounded-xl border border-amber-300/40 bg-stone-950">
+                <img id="selected-model-image" class="aspect-[4/3] w-full object-cover" alt="Selected wear-on model photo" />
+                <div class="border-t border-stone-800 px-3 py-2">
+                  <p id="selected-model-name" class="text-sm font-medium text-stone-200">Select a model</p>
+                  <p class="text-xs text-stone-500">Jewelry will be worn on this photo</p>
+                </div>
               </div>
               <div id="model-list" class="mt-3 grid grid-cols-2 gap-3"></div>
             </div>
@@ -75,14 +98,25 @@
             Upload a jewelry photo and generate a preview to see the result here.
           </div>
           <div id="result-view" class="hidden">
-            <div class="mt-6 grid gap-4 sm:grid-cols-2">
+            <div class="mt-6 grid gap-4 sm:grid-cols-3">
               <figure>
-                <figcaption class="mb-2 text-sm text-stone-400">Original jewelry</figcaption>
+                <figcaption class="mb-2 text-sm text-stone-400">Jewelry photo</figcaption>
                 <img id="original-preview" class="aspect-square w-full rounded-xl bg-stone-950 object-contain" alt="Original jewelry" />
               </figure>
               <figure>
+                <figcaption class="mb-2 text-sm text-stone-400">Wear-on photo</figcaption>
+                <img id="model-result-preview" class="aspect-square w-full rounded-xl bg-stone-950 object-cover" alt="Model photo used for try-on" />
+              </figure>
+              <figure>
                 <figcaption class="mb-2 text-sm text-stone-400">AI try-on</figcaption>
-                <img id="result-preview" class="aspect-square w-full rounded-xl bg-stone-950 object-contain" alt="Generated try-on result" />
+                <div id="result-placeholder" class="flex aspect-square w-full flex-col items-center justify-center gap-4 rounded-xl bg-stone-950 px-6 text-center">
+                  <div class="tryon-spinner" aria-hidden="true"></div>
+                  <div>
+                    <p id="loader-title" class="text-sm font-medium text-stone-200">Generating try-on…</p>
+                    <p id="loader-subtitle" class="mt-1 text-xs text-stone-500">Usually takes 1–2 minutes</p>
+                  </div>
+                </div>
+                <img id="result-preview" class="hidden aspect-square w-full rounded-xl bg-stone-950 object-contain" alt="Generated try-on result" />
               </figure>
             </div>
             <div class="mt-5 flex flex-wrap gap-3">
@@ -107,17 +141,61 @@
       const resultView = document.querySelector("#result-view");
       const emptyState = document.querySelector("#empty-state");
       const originalPreview = document.querySelector("#original-preview");
+      const selectedModelImage = document.querySelector("#selected-model-image");
+      const selectedModelName = document.querySelector("#selected-model-name");
+      const modelResultPreview = document.querySelector("#model-result-preview");
       const resultPreview = document.querySelector("#result-preview");
+      const resultPlaceholder = document.querySelector("#result-placeholder");
       const downloadButton = document.querySelector("#download-button");
       const regenerateButton = document.querySelector("#regenerate-button");
       let selectedModelId = null;
+      let selectedModelImagePath = null;
       let lastJob = null;
+
+      function selectModel(model) {
+        selectedModelId = model.id;
+        selectedModelImagePath = model.image;
+        selectedModelImage.src = `/${model.image}`;
+        selectedModelName.textContent = model.name;
+        modelList.querySelectorAll("button").forEach((item) => {
+          item.classList.toggle("border-amber-300", item.dataset.modelId === model.id);
+          item.classList.toggle("border-stone-700", item.dataset.modelId !== model.id);
+        });
+      }
+
+      function ensureLoaderMarkup() {
+        if (document.querySelector("#loader-title")) return;
+        resultPlaceholder.innerHTML = `
+          <div class="tryon-spinner" aria-hidden="true"></div>
+          <div>
+            <p id="loader-title" class="text-sm font-medium text-stone-200">Generating try-on…</p>
+            <p id="loader-subtitle" class="mt-1 text-xs text-stone-500">Usually takes 1–2 minutes</p>
+          </div>`;
+      }
+
+      function showLoader(title, subtitle = "Usually takes 1–2 minutes") {
+        ensureLoaderMarkup();
+        const titleEl = document.querySelector("#loader-title");
+        const subtitleEl = document.querySelector("#loader-subtitle");
+        resultPreview.classList.add("hidden");
+        resultPreview.removeAttribute("src");
+        resultPlaceholder.classList.remove("hidden");
+        titleEl.textContent = title;
+        subtitleEl.textContent = subtitle;
+      }
+
+      function showResult(url) {
+        resultPlaceholder.classList.add("hidden");
+        resultPreview.classList.remove("hidden");
+        resultPreview.src = `${url}?t=${Date.now()}`;
+        downloadButton.href = url;
+      }
 
       const bodyPartForType = {
         earrings: "ear",
         necklace: "neck",
         ring: "hand",
-        bracelet: "wrist",
+        bracelet: "hand",
       };
 
       function showError(message) {
@@ -149,24 +227,27 @@
       async function loadModels() {
         modelStatus.textContent = "Loading...";
         modelList.replaceChildren();
+        selectedModelId = null;
+        selectedModelImagePath = null;
         const response = await fetch(`/api/models?body_part=${bodyPartForType[typeInput.value]}`);
         if (!response.ok) throw new Error("Could not load model photos.");
         const { models } = await response.json();
-        selectedModelId = models[0]?.id ?? null;
         modelStatus.textContent = `${models.length} available`;
+        if (!models.length) {
+          selectedModelImage.removeAttribute("src");
+          selectedModelName.textContent = "No wear-on photo for this jewelry type";
+          return;
+        }
         models.forEach((model, index) => {
           const button = document.createElement("button");
           button.type = "button";
           button.dataset.modelId = model.id;
           button.className = `rounded-xl border p-2 text-left ${index === 0 ? "border-amber-300" : "border-stone-700"}`;
           button.innerHTML = `<div class="flex aspect-square items-center justify-center overflow-hidden rounded-lg bg-stone-950"><img src="/${model.image}" alt="${model.name}" class="h-full w-full object-cover" /></div><span class="mt-2 block truncate text-xs">${model.name}</span>`;
-          button.addEventListener("click", () => {
-            selectedModelId = model.id;
-            modelList.querySelectorAll("button").forEach((item) => item.classList.replace("border-amber-300", "border-stone-700"));
-            button.classList.replace("border-stone-700", "border-amber-300");
-          });
+          button.addEventListener("click", () => selectModel(model));
           modelList.append(button);
         });
+        selectModel(models[0]);
       }
 
       async function createJob() {
@@ -179,6 +260,8 @@
         generateButton.disabled = true;
         setStatus("Uploading");
         originalPreview.src = URL.createObjectURL(file);
+        modelResultPreview.src = selectedModelImagePath ? `/${selectedModelImagePath}` : "";
+        showLoader("Uploading jewelry…", "Preparing your try-on");
         emptyState.classList.add("hidden");
         resultView.classList.remove("hidden");
         const formData = new FormData();
@@ -196,6 +279,7 @@
         lastJob = { upload_id, model_id: selectedModelId };
         const { job_id } = await jobResponse.json();
         setStatus("Queued");
+        showLoader("Queued…", "Waiting to start generation");
         await pollJob(job_id);
       }
 
@@ -205,14 +289,19 @@
         const job = await response.json();
         setStatus(job.status);
         if (job.status === "done") {
-          resultPreview.src = `${job.result_url}?t=${Date.now()}`;
-          downloadButton.href = job.result_url;
+          showResult(job.result_url);
           generateButton.disabled = false;
           return;
         }
         if (job.status === "failed") throw new Error(job.error || "Generation failed.");
+        if (job.status === "processing") {
+          showLoader("Generating try-on…", "Placing jewelry on the model — about 1–2 minutes");
+        } else {
+          showLoader("Queued…", "Waiting to start generation");
+        }
         window.setTimeout(() => pollJob(jobId).catch((error) => {
           generateButton.disabled = false;
+          resultPlaceholder.innerHTML = `<p class="text-sm text-red-300">Generation failed</p>`;
           showError(error.message);
           setStatus("Failed");
         }), 3000);

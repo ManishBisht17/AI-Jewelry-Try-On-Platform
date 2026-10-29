@@ -1,15 +1,15 @@
 [
   {
     "id": "model-ear-001",
-    "name": "Placeholder Ear Model",
+    "name": "Ear close-up",
     "body_part": "ear",
     "image": "storage/models/model-ear-001.png",
-    "position": {"x": 0.5, "y": 0.35},
-    "scale": 0.2
+    "position": {"x": 0.52, "y": 0.48},
+    "scale": 0.18
   },
   {
     "id": "model-neck-001",
-    "name": "Placeholder Neck Model",
+    "name": "Neck close-up",
     "body_part": "neck",
     "image": "storage/models/model-neck-001.png",
     "position": {"x": 0.5, "y": 0.55},
@@ -17,7 +17,7 @@
   },
   {
     "id": "model-hand-001",
-    "name": "Placeholder Hand Model",
+    "name": "Hand close-up",
     "body_part": "hand",
     "image": "storage/models/model-hand-001.png",
     "position": {"x": 0.5, "y": 0.5},

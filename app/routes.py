@@ -105,7 +105,7 @@ def create_generation(
     )
     db.add(generation)
     db.commit()
-    background_tasks.add_task(run_generation, db, generation.id)
+    background_tasks.add_task(run_generation, generation.id)
     return {"job_id": generation.id}
 
 

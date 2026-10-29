@@ -12,10 +12,14 @@ from openai import OpenAI
 
 
 PROMPT = (
-    "Put the jewelry from the second image on the person in the first image. "
-    "Keep the jewelry design EXACTLY the same: same shape, stones, chain and colors. "
-    "Do not change the person's face, pose or background. "
-    "Use realistic lighting and natural shadows on the skin."
+    "Create a professional jewelry catalog try-on photo. "
+    "The first image is the model; the second image is the jewelry product. "
+    "Place the jewelry from the second image onto the model so it looks naturally worn: "
+    "earrings on the earlobe, necklace around the neck, ring on a finger, or bracelet on the wrist. "
+    "Preserve the jewelry design EXACTLY: same shape, metal color, stones, size proportions, and details. "
+    "Keep the model's face, skin tone, pose, hair, and background unchanged. "
+    "Match lighting and add soft realistic contact shadows and metal reflections on the skin. "
+    "Photorealistic close-up lifestyle product photography, sharp jewelry focus, natural skin texture."
 )
 SUPPORTED_EXTENSIONS = {".jpg", ".jpeg", ".png"}
 
@@ -51,7 +55,7 @@ def main() -> None:
         "rb"
     ) as jewelry_image:
         response = client.images.edit(
-            model="gpt-image-1",
+            model="gpt-image-2.5-sunburst",
             image=[model_image, jewelry_image],
             prompt=PROMPT,
             quality="low",
